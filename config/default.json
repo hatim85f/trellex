@@ -1,0 +1,4 @@
+{
+  "mongoURI": "mongodb+srv://hatimfayez85_db_user:rHteAntP8PV0uZo0@trellex.ru1xhlu.mongodb.net/",
+  "jwtSecret": "mysecrettoken"
+}
