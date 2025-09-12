@@ -21,6 +21,11 @@ const UserSchema = Schema(
       type: String,
       required: true,
     },
+    userId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
     profilePicture: {
       type: String,
       default: "",
@@ -62,6 +67,11 @@ const UserSchema = Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "task",
+      },
+    ],
+    pushTokens: [
+      {
+        type: String,
       },
     ],
   },

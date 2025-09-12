@@ -94,10 +94,7 @@ router.post(
         },
       };
 
-      jwt.sign(payload, config.get("jwtSecret"), (err, token) => {
-        if (err) throw err;
-        res.json({ token });
-      });
+      const token = jwt.sign(payload, config.get("jwtSecret"));
 
       return res.status(200).json({ user, token });
     } catch (err) {
@@ -176,15 +173,16 @@ router.post(
       if (user) {
         return res
           .status(400)
-          .json({ errors: [{ message: "User already exists" }] });
+          .json({ errors: [{ message: "Username or email already exists" }] });
       }
 
       // create a random 6 digits id for the user
 
-      const userId = uuvc6();
+      const usersLength = await User.countDocuments();
+      const userId = (100000 + usersLength + 1).toString();
 
       user = new User({
-        _id: userId,
+        userId,
         userName,
         email,
         fullName,
@@ -206,16 +204,7 @@ router.post(
         },
       };
 
-      jwt.sign(
-        payload,
-        config.get("jwtSecret"),
-
-        (err, token) => {
-          if (err) throw err;
-          res.json({ token });
-        }
-      );
-
+      const token = jwt.sign(payload, config.get("jwtSecret"));
       return res
         .status(200)
         .json({ message: "User registered successfully", user, token });
