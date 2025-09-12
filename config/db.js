@@ -10,7 +10,7 @@ const connectDB = async () => {
   try {
     await mongoose.connect(db);
 
-    console.log("Codex DB server connected");
+    console.log("Trellex DB server connected");
   } catch (error) {
     console.error(error.message);
 
