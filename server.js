@@ -15,6 +15,7 @@ app.use(cors());
 
 app.use("/api/auth", require("./routes/api/auth"));
 app.use("/api/team", require("./routes/api/team"));
+app.use("/api/tasks", require("./routes/api/tasks"));
 
 const PORT = process.env.PORT || 5000;
 
