@@ -288,7 +288,8 @@ router.post("/request-reset", sensitiveLimiter, async (req, res) => {
     // Remove any previous reset codes for this user
     await passwordReset.deleteMany({ user: user._id });
 
-    await passwordReset.insertMany({
+    // Correct: use create instead of insertMany
+    await passwordReset.create({
       user: user._id,
       code,
     });
@@ -366,9 +367,9 @@ router.post("/biometric", auth, async (req, res) => {
     return res.status(400).json({ message: "Biometric data is required" });
   }
   try {
-    // Save biometric data to user profile (add field if not present)
-    const user = await User.findOne(
-      { _id: userId },
+    // Use findByIdAndUpdate for update
+    const user = await User.findByIdAndUpdate(
+      userId,
       { $set: { biometricData } },
       { new: true }
     ).select("-password");
@@ -391,8 +392,8 @@ router.delete("/delete-account", auth, async (req, res) => {
     return res.status(400).json({ message: "User ID is required" });
   }
   try {
-    const user = await User.deleteOne({ _id: userId });
-    if (!user) {
+    const result = await User.deleteOne({ _id: userId });
+    if (result.deletedCount === 0) {
       return res.status(404).json({ message: "User not found" });
     }
     res.json({ message: "Account deleted successfully" });
