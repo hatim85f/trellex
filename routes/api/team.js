@@ -44,7 +44,7 @@ router.post("/join", auth, async (req, res) => {
 
     await sendNotification({
       title: "New Team Join Request",
-      subTitle: `Join request from ${userFullName}`,
+      subject: `Join request from ${userFullName}`,
       message: `User ${userFullName} has requested to join your team.`,
       pushTokens: [teamSupervisor.pushTokens], // Add the team's admin push tokens here
       userIds: [userId], // Save notification for the user who sent the request
@@ -137,7 +137,7 @@ router.put("/approve-join", auth, async (req, res) => {
     // Notify the user that their request was approved
     await sendNotification({
       title: "Team Join Request Approved",
-      subTitle: "",
+      subject: "",
       message: `You have been added to the team ${team.teamName}.`,
       pushTokens: [], // Add logic to get user's push tokens if needed
       userIds: [joinRequest.user.toString()],

@@ -3,13 +3,15 @@ const Schema = mongoose.Schema;
 
 const NotificationSchema = Schema(
   {
-    user: {
+    to: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "user",
+      },
+    ],
+    from: {
       type: Schema.Types.ObjectId,
-      ref: "User",
-    },
-    message: {
-      type: String,
-      required: true,
+      ref: "user",
     },
     isRead: {
       type: Boolean,
@@ -19,9 +21,13 @@ const NotificationSchema = Schema(
       type: String,
       required: true,
     },
-    subTitle: {
+    subject: {
       type: String,
-      default: "",
+      required: true,
+    },
+    message: {
+      type: String,
+      required: true,
     },
   },
   {

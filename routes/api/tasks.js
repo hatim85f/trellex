@@ -6,6 +6,7 @@ const Comment = require("../../models/Comment");
 const auth = require("../../middleware/auth");
 const sendNotification = require("../../helpers/sendNotification");
 const SubTask = require("../../models/SubTask");
+const { default: mongoose } = require("mongoose");
 
 // @route   GET /api/tasks/:taskId
 // @desc    Get a single task by ID
@@ -29,44 +30,42 @@ router.get("/:taskId", auth, async (req, res) => {
   }
 });
 
-// @route   GET api/tasks/aggregate
-// @desc    Aggregate tasks for a user based on position, with detailed comments, creator info, and progression
-// @access  Private (add auth if needed)
-router.get("/:userId", auth, async (req, res) => {
-  const { userId } = req.params;
-
+// @route   GET api/tasks/get-tasks/:userId
+// @desc    Aggregate tasks for a user with creator, participants, rich comments, and daysLeft
+// @access  Private
+router.get("/get-tasks/:userId", auth, async (req, res) => {
   try {
-    // Get user and their position
-    const user = await User.findOne({ _id: userId });
+    const userId = new mongoose.Types.ObjectId(req.params.userId);
 
-    let matchStage = {};
-    if (user.position === "Manager" || user.position === "Supervisor") {
-      // Get all teams managed or supervised by the user
-      const teamsManaged = user.managerOfTeams || [];
-      const teamsSupervised = user.supervisorOfTeams || [];
-      // Get all users in those teams
-      const teamUserIds = await User.find({
-        $or: [
-          { team: { $in: teamsManaged } },
-          { team: { $in: teamsSupervised } },
-        ],
-      }).distinct("_id");
-      matchStage = {
-        $or: [
-          { participants: { $in: teamUserIds } },
-          { createdBy: { $in: teamUserIds } },
-        ],
-      };
-    } else {
-      // Employee: only tasks where user is a participant or creator
-      matchStage = {
-        $or: [{ participants: user._id }, { createdBy: user._id }],
-      };
-    }
+    // Tasks created by the user or where the user is a participant
+    const matchStage = {
+      $or: [{ createdBy: userId }, { participants: userId }],
+    };
 
     const tasks = await Task.aggregate([
       { $match: matchStage },
-      // Lookup for comments with user details
+
+      // Participants -> details
+      {
+        $lookup: {
+          from: "users",
+          localField: "participants",
+          foreignField: "_id",
+          as: "participantDetails",
+        },
+      },
+
+      // Creator -> details (array; we normalize later)
+      {
+        $lookup: {
+          from: "users",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "creatorInfo",
+        },
+      },
+
+      // Comments with embedded user info (single lookup pipeline)
       {
         $lookup: {
           from: "comments",
@@ -78,88 +77,103 @@ router.get("/:userId", auth, async (req, res) => {
                 from: "users",
                 localField: "user",
                 foreignField: "_id",
-                as: "userInfo",
+                as: "userObj",
               },
             },
-            { $unwind: "$userInfo" },
+            { $addFields: { userObj: { $arrayElemAt: ["$userObj", 0] } } },
             {
               $project: {
                 _id: 1,
-                username: "$userInfo.userName",
                 title: 1,
-                comment: "$content",
-                profilePicture: "$userInfo.profilePicture",
+                content: 1,
                 backgroundColor: 1,
+                createdAt: 1,
+                userFullName: "$userObj.fullName",
+                userProfilePicture: "$userObj.profilePicture",
+                userPosition: "$userObj.position",
+                userEmail: "$userObj.email",
               },
             },
           ],
           as: "commentDetails",
         },
       },
-      // Lookup for createdBy user details
-      {
-        $lookup: {
-          from: "users",
-          localField: "createdBy",
-          foreignField: "_id",
-          as: "creatorInfo",
-        },
-      },
-      { $unwind: { path: "$creatorInfo", preserveNullAndEmptyArrays: true } },
-      // Lookup for subtasks
-      {
-        $lookup: {
-          from: "tasks",
-          localField: "subtasks",
-          foreignField: "_id",
-          as: "subtaskDetails",
-        },
-      },
-      // Calculate progression
+
+      // Normalize shapes + compute daysLeft
       {
         $addFields: {
-          progression: {
-            $cond: [
-              { $gt: [{ $size: "$subtaskDetails" }, 0] },
-              { $avg: "$subtaskDetails.progress" },
-              "$progress",
-            ],
+          // daysLeft: negative if overdue, 0 if due today, positive if in future
+          daysLeft: {
+            $dateDiff: {
+              startDate: "$$NOW",
+              endDate: "$endDate",
+              unit: "day",
+            },
           },
+
           createdBy: {
-            name: "$creatorInfo.fullName",
-            profilePicture: "$creatorInfo.profilePicture",
-            title: "$creatorInfo.title",
+            fullName: { $arrayElemAt: ["$creatorInfo.fullName", 0] },
+            profilePicture: {
+              $arrayElemAt: ["$creatorInfo.profilePicture", 0],
+            },
+            position: { $arrayElemAt: ["$creatorInfo.position", 0] },
+            _id: { $arrayElemAt: ["$creatorInfo._id", 0] },
+            pushTokens: { $arrayElemAt: ["$creatorInfo.pushTokens", 0] },
           },
+
+          participantDetails: {
+            $map: {
+              input: "$participantDetails",
+              as: "p",
+              in: {
+                _id: "$$p._id",
+                fullName: "$$p.fullName",
+                profilePicture: "$$p.profilePicture",
+                position: "$$p.position",
+                pushTokens: "$$p.pushTokens",
+              },
+            },
+          },
+
+          comments: "$commentDetails",
         },
       },
-      // Project final output
+
+      // Final projection
       {
         $project: {
+          _id: 1,
           title: 1,
           description: 1,
-          priority: 1,
-          status: 1,
-          progress: 1,
-          progression: 1,
           startDate: 1,
           endDate: 1,
+          status: 1,
+          priority: 1,
+          progress: 1,
+          daysLeft: 1,
           createdBy: 1,
-          participants: 1,
-          attachments: 1,
+          participantDetails: 1,
+          comments: 1,
           tags: 1,
+          attachments: 1,
+          isDeleted: 1,
           summary: 1,
           feedback: 1,
           subtasks: 1,
-          commentDetails: 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
       },
     ]);
-    res.json({ tasks });
+
+    return res.status(200).json({ tasks });
   } catch (error) {
-    console.error(error.message);
-    res
-      .status(500)
-      .json({ message: "Something went wrong, please try again later." });
+    console.error(error);
+    return res.status(500).send({
+      error: "ERROR!",
+      message:
+        "Something went wrong, we couldn't retrieve your data. Please try again later",
+    });
   }
 });
 
@@ -249,13 +263,13 @@ router.put("/:taskId", auth, async (req, res) => {
 
     // send notification to new participants (if needed)
 
-    // sendNotification({
-    //   title: `${user.fullName} assigned you a new task`,
-    //   subTitle: "You have been added to a new task",
-    //   message: `You have been assigned to the task: ${task.title}`,
-    //   pushTokens: [], // Fetch and provide actual push tokens of participants
-    //   userIds: participants,
-    // });
+    sendNotification({
+      title: `${user.fullName} assigned you a new task`,
+      subject: "You have been added to a new task",
+      message: `You have been assigned to the task: ${task.title}`,
+      pushTokens: [], // Fetch and provide actual push tokens of participants
+      userIds: participants,
+    });
 
     return res.status(200).json({
       message:
@@ -308,13 +322,13 @@ router.put("/add-subtask/:taskId", auth, async (req, res) => {
         : "You have been assigned a new subtask";
     const userTokens = user.pushTokens || [];
 
-    // sendNotification({
-    //     title: messageTitle,
-    //     subTitle: messageSubTitle,
-    //     message: `${message} : ${title}`,
-    //     pushTokens: userTokens,
-    //     userIds: [taskedPersonId],
-    // });
+    await sendNotification({
+      title: messageTitle,
+      subject: messageSubTitle,
+      message: `${message} : ${title}`,
+      pushTokens: userTokens,
+      userIds: [taskedPersonId],
+    });
 
     await Task.updateOne(
       { _id: taskId },
@@ -396,34 +410,56 @@ router.put("/comment-main-task/:taskId", auth, async (req, res) => {
   const { userId, title, content } = req.body;
 
   try {
+    const user = await User.findOne({ _id: userId });
+
+    // Prevent duplicate comment from same user with same content on the same task
+    const existingComment = await Comment.findOne({
+      user: userId,
+      forTask: taskId,
+      content: content,
+    });
+    if (existingComment) {
+      return res.status(400).send({
+        message: "Duplicate comment: You have already posted this comment.",
+      });
+    }
+
     const newComment = new Comment({
       user: userId,
       title,
       content,
       forTask: taskId,
+      backgroundColor: user.commentColor,
     });
 
     await newComment.save();
 
+    const task = await Task.findOne({ _id: taskId });
+    let newStatus = task.status;
+    if (task.status === "pending") {
+      newStatus = "in-progress";
+    }
     await Task.updateOne(
       { _id: taskId },
-      { $addToSet: { comments: newComment._id } },
-      { $set: { status: { $ne: "pending" ? "in-progress" : "pending" } } }
+      {
+        $addToSet: { comments: newComment._id },
+        $set: { status: newStatus },
+      }
     );
-
-    const task = await Task.findOne({ _id: taskId });
 
     const participantsToken = await User.find({
       _id: { $in: task.participants },
     }).distinct("pushTokens");
 
-    // sendNotification({
-    //     title: `New comment on task: ${task.title}`,
-    //     subTitle: "A new comment has been added",
-    //     message: `${title} - ${content}`,
-    //     pushTokens: participantsToken,
-    //     userIds: task.participants,
-    // });
+    console.log(task.participants);
+
+    await sendNotification({
+      title: `New comment on task: ${task.title}`,
+      subject: "A new comment has been added",
+      message: `${title} - ${content}`,
+      pushTokens: participantsToken || [],
+      userIds: task.participants,
+    });
 
     return res.status(200).send({
       message: "Comment added successfully",
@@ -494,13 +530,13 @@ router.put("/add-subtask-feedback/:subtaskId", async (req, res) => {
       );
     }
 
-    // sendNotification({
-    //   title: `New feedback on subtask of: ${mainTask.title}`,
-    //   subTitle: "A new feedback has been added",
-    //   message: `${feedback}`,
-    //   pushTokens: participantTokens,
-    //   userIds: mainTask.participants,
-    // });
+    await sendNotification({
+      title: `New feedback on subtask of: ${mainTask.title}`,
+      subject: "A new feedback has been added",
+      message: `${feedback}`,
+      pushTokens: participantTokens,
+      userIds: mainTask.participants,
+    });
 
     return res
       .status(200)
@@ -564,13 +600,13 @@ router.put("/summarize-feedback/:taskId", auth, async (req, res) => {
     }).distinct("pushTokens");
 
     // Send notification
-    // await sendNotification({
-    //   title: `Task summary created: ${task.title}`,
-    //   subTitle: "Task has been summarized and completed",
-    //   message: `A summary and conclusion have been added to the task.`,
-    //   pushTokens,
-    //   userIds: notifyUserIds,
-    // });
+    await sendNotification({
+      title: `Task summary created: ${task.title}`,
+      subject: "Task has been summarized and completed",
+      message: `A summary and conclusion have been added to the task.`,
+      pushTokens,
+      userIds: notifyUserIds,
+    });
 
     return res.status(200).json({
       message: "Task summarized and completed",

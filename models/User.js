@@ -1,6 +1,15 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+function getRandomHexColor() {
+  return (
+    "#" +
+    Math.floor(Math.random() * 16777215)
+      .toString(16)
+      .padStart(6, "0")
+  );
+}
+
 const UserSchema = Schema(
   {
     userName: {
@@ -74,6 +83,10 @@ const UserSchema = Schema(
         type: String,
       },
     ],
+    commentColor: {
+      type: String,
+      default: getRandomHexColor,
+    },
   },
   {
     timestamps: true,
