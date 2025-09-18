@@ -73,6 +73,18 @@ router.post(
 
     const { userName, password } = req.body;
 
+    if (!userName) {
+      return res
+        .status(500)
+        .send({ error: "Error", message: "Username is required" });
+    }
+
+    if (!password) {
+      return res
+        .status(500)
+        .send({ error: "Error", message: "Password is required" });
+    }
+
     try {
       let user = await User.findOne({ userName });
       if (!user) {
