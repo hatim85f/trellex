@@ -62,7 +62,7 @@ router.post(
   "/login",
   sensitiveLimiter,
   [
-    check("userName", "User name is required").not().isEmpty(),
+    check("userName", "Username is required").not().isEmpty(),
     check("password", "Password is required").exists(),
   ],
   async (req, res) => {
@@ -154,7 +154,7 @@ router.post("/biometric-login", async (req, res) => {
 router.post(
   "/register",
   [
-    check("userName", "User name is required").not().isEmpty(),
+    check("userName", "Username is required").not().isEmpty(),
     check("email", "Please include a valid email").isEmail(),
     check("fullName", "Full name is required").not().isEmpty(),
     check(
@@ -323,7 +323,7 @@ router.post("/request-reset", sensitiveLimiter, async (req, res) => {
       .send({ message: "Reset code sent to registered email" });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: err.message });
   }
 });
 
