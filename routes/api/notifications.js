@@ -38,7 +38,7 @@ router.post("/mail", async (req, res) => {
       to: email,
       name: name,
       templateId: 1,
-      paramse: {
+      params: {
         full_name: name,
         code: `${code}`,
         time_create: moment(new Date()).format("hh:mm A MMMM Do, YYYY"),
