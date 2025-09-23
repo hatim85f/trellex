@@ -31,6 +31,8 @@ router.put("/", auth, async (req, res) => {
 router.post("/mail", async (req, res) => {
   const { email, name } = req.body;
 
+  return res.status(200).send({ name, email });
+
   try {
     const code = Math.floor(100000 + Math.random() * 900000);
 
