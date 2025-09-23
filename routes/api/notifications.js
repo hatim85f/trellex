@@ -35,13 +35,13 @@ router.post("/mail", async (req, res) => {
     const code = Math.floor(100000 + Math.random() * 900000);
 
     await sendTemplateEmail({
-      to: "hatim.fayez@gmail.com",
-      name: "Hatim Fayez",
+      to: email,
+      name: name,
       templateId: 1,
       paramse: {
-        full_name: "Hatim Fayez",
+        full_name: name,
         code: code,
-        time: moment(new Date()).format("hh:mm A MMMM Do, YYYY"),
+        time_create: moment(new Date()).format("hh:mm A MMMM Do, YYYY"),
       },
     });
 
