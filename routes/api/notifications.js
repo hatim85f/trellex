@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Notification = require("../../models/Notification");
+const { sendTemplateEmail } = require("../../lib/brevo");
 
 router.put("/:notificationId", async (req, res) => {
   const { notificationId } = req.params;
