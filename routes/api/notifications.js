@@ -31,18 +31,16 @@ router.put("/:notificationId", async (req, res) => {
 router.post("/mail", async (req, res) => {
   const { email, name } = req.body;
 
-  return res.status(200).send({ email, name });
-
   try {
     const code = Math.floor(100000 + Math.random() * 900000);
 
     await sendTemplateEmail({
-      to: email,
-      name: name,
+      to: "hatim.fayez@gmail.com",
+      name: "Hatim Fayez",
       templateId: 1,
       paramse: {
-        full_name: name,
-        code,
+        full_name: "Hatim Fayez",
+        code: code,
         time: moment(new Date()).format("hh:mm A MMMM Do, YYYY"),
       },
     });
