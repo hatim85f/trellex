@@ -40,7 +40,7 @@ router.post("/mail", async (req, res) => {
       templateId: 1,
       paramse: {
         full_name: name,
-        code: code,
+        code: `${code}`,
         time_create: moment(new Date()).format("hh:mm A MMMM Do, YYYY"),
       },
     });
