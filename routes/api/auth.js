@@ -294,6 +294,15 @@ router.post("/request-reset", sensitiveLimiter, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
+    // check if there is a valid (not expired) reset code already
+    const existingReset = await passwordReset.findOne({ user: user._id });
+    if (existingReset) {
+      const now = new Date();
+      if (now - existingReset.createdAt < 5 * 60 * 1000) {
+        return res.status(400).json({ message: "Reset code already sent" });
+      }
+    }
+
     // Generate random 5-digit code
     const code = Math.floor(10000 + Math.random() * 90000).toString();
 
