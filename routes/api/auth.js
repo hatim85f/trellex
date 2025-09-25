@@ -283,7 +283,7 @@ router.put("/profile", auth, async (req, res) => {
 // @route   POST api/auth/request-reset
 // @desc    Request password reset, generate and save code
 // @access  Public
-router.post("/request-reset", sensitiveLimiter, async (req, res) => {
+router.post("/request-reset", async (req, res) => {
   const { email } = req.body;
   if (!email) {
     return res.status(400).json({ message: "Email is required" });
@@ -299,7 +299,10 @@ router.post("/request-reset", sensitiveLimiter, async (req, res) => {
     if (existingReset) {
       const now = new Date();
       if (now - existingReset.createdAt < 5 * 60 * 1000) {
-        return res.status(400).json({ message: "Reset code already sent" });
+        return res.status(400).json({
+          message:
+            "Reset code already sent, wait for 5 minutes to request a new code",
+        });
       }
     }
 
