@@ -388,9 +388,6 @@ router.put("/reset-password", sensitiveLimiter, async (req, res) => {
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
 
-    // Delete the reset code after use
-    await passwordReset.deleteOne({ _id: resetEntry._id });
-
     res.json({ message: "Password reset successful" });
   } catch (err) {
     console.error(err.message);
