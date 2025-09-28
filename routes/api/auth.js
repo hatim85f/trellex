@@ -383,16 +383,9 @@ router.put("/reset-password", sensitiveLimiter, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resetEntry = await passwordReset.findOne({ user: user._id, code });
+    const resetEntry = await passwordReset.findOne({ user: user._id });
     if (!resetEntry) {
       return res.status(400).json({ message: "Invalid or expired code" });
-    }
-
-    // Check if code is expired (should be handled by TTL, but double check)
-    const now = new Date();
-    if (resetEntry.createdAt && now - resetEntry.createdAt > 5 * 60 * 1000) {
-      await passwordReset.deleteOne({ _id: resetEntry._id });
-      return res.status(400).json({ message: "Code expired" });
     }
 
     // Hash new password
