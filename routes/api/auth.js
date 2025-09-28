@@ -375,7 +375,7 @@ router.put("/reset-password", sensitiveLimiter, async (req, res) => {
   if (!email || !newPassword) {
     return res
       .status(400)
-      .json({ message: "Email, code, and new password are required" });
+      .json({ message: "Email and new password are required" });
   }
   try {
     const user = await User.findOne({ email });
@@ -406,7 +406,7 @@ router.put("/reset-password", sensitiveLimiter, async (req, res) => {
     res.json({ message: "Password reset successful" });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send({ message: "Server error" });
+    res.status(500).send({ message: err.message });
   }
 });
 
