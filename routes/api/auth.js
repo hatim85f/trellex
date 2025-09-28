@@ -371,8 +371,8 @@ router.post("/verify-reset-code", async (req, res) => {
 // @desc    Reset user password after verifying code
 // @access  Public
 router.put("/reset-password", sensitiveLimiter, async (req, res) => {
-  const { email, code, newPassword } = req.body;
-  if (!email || !code || !newPassword) {
+  const { email, newPassword } = req.body;
+  if (!email || !newPassword) {
     return res
       .status(400)
       .json({ message: "Email, code, and new password are required" });
