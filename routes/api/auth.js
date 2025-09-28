@@ -339,6 +339,34 @@ router.post("/request-reset", async (req, res) => {
   }
 });
 
+router.post("/verify-reset-code", async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const resetEntry = await passwordReset.findOne({ user: user._id, code });
+    if (!resetEntry) {
+      return res.status(400).json({ message: "Invalid or expired code" });
+    }
+
+    // Check if code is expired (should be handled by TTL, but double check)
+    const now = new Date();
+    if (resetEntry.createdAt && now - resetEntry.createdAt > 5 * 60 * 1000) {
+      await passwordReset.deleteOne({ _id: resetEntry._id });
+      return res.status(400).json({ message: "Code expired" });
+    }
+
+    res.json({ message: "Code verified successfully" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send({ message: "Server error" });
+  }
+});
+
 // @route   POST api/auth/reset-password
 // @desc    Reset user password after verifying code
 // @access  Public
