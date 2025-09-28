@@ -383,11 +383,6 @@ router.put("/reset-password", sensitiveLimiter, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resetEntry = await passwordReset.findOne({ user: user._id });
-    if (!resetEntry) {
-      return res.status(400).json({ message: "Invalid or expired code" });
-    }
-
     // Hash new password
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
