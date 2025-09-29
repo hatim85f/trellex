@@ -60,7 +60,7 @@ router.get("/check-email", async (req, res) => {
 // @access  Public
 router.post(
   "/login",
-  sensitiveLimiter,
+
   [
     check("userName", "Username is required").not().isEmpty(),
     check("password", "Password is required").exists(),
