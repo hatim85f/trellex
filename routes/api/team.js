@@ -137,6 +137,11 @@ router.put("/approve-join", auth, async (req, res) => {
       { _id: team._id },
       { $addToSet: { members: joinRequest.user } }
     );
+
+    await User.updateOne(
+      { _id: joinRequest.user },
+      { $addToSet: { memberOfTeams: team._id } }
+    );
     // Notify the user that their request was approved
     await sendNotification({
       title: "Team Join Request Approved",

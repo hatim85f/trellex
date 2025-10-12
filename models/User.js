@@ -60,6 +60,12 @@ const UserSchema = Schema(
       type: Schema.Types.ObjectId,
       ref: "team",
     },
+    memberOfTeams: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "team",
+      },
+    ],
     managerOfTeams: [
       {
         type: Schema.Types.ObjectId,
