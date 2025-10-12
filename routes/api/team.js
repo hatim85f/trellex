@@ -106,7 +106,7 @@ router.post("/", auth, async (req, res) => {
     console.error(error.message);
     return res.status(500).send({
       error: "ERROR!",
-      message: "Something went wrong, please try again later.",
+      message: error.message || "Something went wrong, please try again later.",
     });
   }
 });
