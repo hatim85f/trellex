@@ -67,7 +67,7 @@ router.post("/join", auth, async (req, res) => {
 // @desc    Create a new team
 // @access  Private (Admin only)
 router.post("/", auth, async (req, res) => {
-  const { teamName, userId } = req.body;
+  const { teamName, userId, teamLogo } = req.body;
 
   try {
     // check if team name is already taken
@@ -85,8 +85,9 @@ router.post("/", auth, async (req, res) => {
 
     const newTeam = new Team({
       teamName: teamName,
-      supervisedBy: new mongoose.Types.ObjectId(userId),
+      supervisedBy: userId,
       teamCode: teamCode,
+      teamLogo: teamLogo,
     });
 
     const savedTeam = await newTeam.save();
