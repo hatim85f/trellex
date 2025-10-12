@@ -9,7 +9,7 @@ const auth = require("../../middleware/auth");
 const TeamJoinRequest = require("../../models/TeamJoinRequest");
 const sendNotification = require("../../helpers/sendNotification");
 
-router.get("/:userId", async (req, res) => {
+router.get("/:userId", auth, async (req, res) => {
   // if user.position is Employee his teams will be in array memberOfTeams
   // if user.position is Supervisor his teams will be in array supervisorOfTeams
   // if user.position is Manager his teams will be in array managerOfTeams
