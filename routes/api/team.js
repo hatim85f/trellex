@@ -9,8 +9,38 @@ const auth = require("../../middleware/auth");
 const TeamJoinRequest = require("../../models/TeamJoinRequest");
 const sendNotification = require("../../helpers/sendNotification");
 
-router.get("/", async (req, res) => {
-  return res.status(200).send("Team route is working");
+router.get("/:userId", async (req, res) => {
+  // if user.position is Employee his teams will be in array memberOfTeams
+  // if user.position is Supervisor his teams will be in array supervisorOfTeams
+  // if user.position is Manager his teams will be in array managerOfTeams
+
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findOne({ _id: userId });
+
+    if (!user) {
+      return res
+        .status(404)
+        .send({ error: "ERROR!", message: "User not found" });
+    }
+
+    let teams = [];
+    if (user.position === "Employee") {
+      teams = await Team.find({ _id: { $in: user.memberOfTeams } });
+    } else if (user.position === "Supervisor") {
+      teams = await Team.find({ _id: { $in: user.supervisorOfTeams } });
+    } else if (user.position === "Manager") {
+      teams = await Team.find({ _id: { $in: user.managerOfTeams } });
+    }
+    return res.status(200).send({ teams });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).send({
+      error: "ERROR!",
+      message: "Something went wrong, please try again later.",
+    });
+  }
 });
 
 // @route POST api/team
