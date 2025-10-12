@@ -71,11 +71,13 @@ router.post("/", auth, async (req, res) => {
 
   try {
     // check if team name is already taken
-    let team = await Team.findOne({
-      teamName: teamName.trim().toLowerCase(),
-    });
 
-    if (team) {
+    const teams = await Team.find({});
+    const teamsNames = teams.map((t) => t.teamName.trim().toLowerCase());
+
+    // map all names and check if there is a match
+
+    if (teamsNames.includes(teamName.trim().toLowerCase())) {
       return res
         .status(500)
         .send({ error: "ERROR!", message: "Team name is already taken" });
