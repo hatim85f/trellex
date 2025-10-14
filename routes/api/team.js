@@ -33,6 +33,7 @@ router.get("/:userId", auth, async (req, res) => {
     } else if (user.position === "Manager") {
       teams = await Team.find({ _id: { $in: user.managerOfTeams } });
     }
+
     return res.status(200).send({ teams });
   } catch (error) {
     console.error(error.message);
@@ -59,18 +60,30 @@ router.post("/join", auth, async (req, res) => {
       });
     }
 
+    const isMember = team.members.includes(mongoose.Types.ObjectId(userId));
+    if (isMember) {
+      return res.status(400).send({
+        error: "ERROR!",
+        message: "You are already a member of this team.",
+      });
+    }
+
+    const user = await User.findOne({ _id: userId });
+    const teamSupervisor = await User.findOne({ _id: team.supervisedBy });
+
     // create a new join request
     const newJoinRequest = new TeamJoinRequest({
       user: userId,
       teamCode,
+      profilePicture: user.profilePicture,
+      fullName: user.fullName,
+      teamName: team.teamName,
+      teamSupervisor: team.supvervisedBy,
     });
 
     await newJoinRequest.save();
 
-    const user = await User.findOne({ _id: userId });
     const userFullName = user.fullName;
-
-    const teamSupervisor = await User.findOne({ _id: team.supervisedBy });
 
     await sendNotification({
       title: "New Team Join Request",

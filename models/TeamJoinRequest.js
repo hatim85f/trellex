@@ -12,6 +12,21 @@ const TeamJoinSchema = Schema(
       type: String,
       required: true,
     },
+    teamName: {
+      type: String,
+      required: true,
+    },
+    profilePicture: {
+      type: String,
+    },
+    userName: {
+      type: String,
+      required: true,
+    },
+    teamSupervisor: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
     isApproved: {
       type: Boolean,
       default: false,
