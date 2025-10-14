@@ -60,7 +60,20 @@ router.post("/join", auth, async (req, res) => {
       });
     }
 
-    const isMember = team.members.includes(mongoose.Types.ObjectId(userId));
+    const requestExists = await TeamJoinRequest.findOne({
+      user: userId,
+      teamCode,
+    });
+
+    if (requestExists) {
+      return res.status(400).send({
+        error: "ERROR!",
+        message:
+          "You have already sent a join request to this team, please wait for their admin confirmation.",
+      });
+    }
+
+    const isMember = team.members.includes(new mongoose.Types.ObjectId(userId));
     if (isMember) {
       return res.status(400).send({
         error: "ERROR!",
