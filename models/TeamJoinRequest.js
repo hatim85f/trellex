@@ -19,7 +19,7 @@ const TeamJoinSchema = Schema(
     profilePicture: {
       type: String,
     },
-    userName: {
+    fullName: {
       type: String,
       required: true,
     },
