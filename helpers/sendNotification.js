@@ -29,7 +29,7 @@ async function sendNotification({
     title,
     subtitle: subject,
     body: message,
-    data: { title, subTitle, message },
+    data: { title, subject, message },
   }));
 
   // Send notifications via Expo
