@@ -216,7 +216,7 @@ router.put("/approve-join", auth, async (req, res) => {
     // Notify the user that their request was approved
     await sendNotification({
       title: "Team Join Request Approved",
-      subject: "",
+      subject: "Congratulations!",
       message: `You have been added to the team ${team.teamName}.`,
       pushTokens: [], // Add logic to get user's push tokens if needed
       userIds: [joinRequest.user.toString()],
@@ -228,12 +228,9 @@ router.put("/approve-join", auth, async (req, res) => {
     });
   } catch (error) {
     console.error(error.message);
-    return res
-      .status(500)
-      .json({
-        message:
-          error.message || "Something went wrong, please try again later.",
-      });
+    return res.status(500).json({
+      message: error.message || "Something went wrong, please try again later.",
+    });
   }
 });
 

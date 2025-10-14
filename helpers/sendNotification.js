@@ -40,12 +40,6 @@ async function sendNotification({
   );
   const expoResult = expoResponse.data;
 
-  console.log({
-    subject,
-    message,
-    title,
-  });
-
   // Save notification in DB for each user (if userIds provided)
   if (userIds && Array.isArray(userIds) && userIds.length > 0) {
     for (let userId of userIds) {
