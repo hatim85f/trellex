@@ -34,7 +34,20 @@ router.get("/:userId", auth, async (req, res) => {
       teams = await Team.find({ _id: { $in: user.managerOfTeams } });
     }
 
-    return res.status(200).send({ teams });
+    let joiningRequests = [];
+    if (user.position === "Supervisor") {
+      joiningRequests = await TeamJoinRequest.find({
+        teamSupervisor: userId,
+        isApproved: false,
+      });
+    } else if (user.position === "Employee") {
+      joiningRequests = await TeamJoinRequest.find({
+        user: userId,
+        isApproved: false,
+      });
+    }
+
+    return res.status(200).send({ teams, joiningRequests });
   } catch (error) {
     console.error(error.message);
     return res.status(500).send({
@@ -84,6 +97,8 @@ router.post("/join", auth, async (req, res) => {
     const user = await User.findOne({ _id: userId });
     const teamSupervisor = await User.findOne({ _id: team.supervisedBy });
 
+    // return res.status(200).send({ team: team.supervisedBy });
+
     // create a new join request
     const newJoinRequest = new TeamJoinRequest({
       user: userId,
@@ -91,7 +106,7 @@ router.post("/join", auth, async (req, res) => {
       profilePicture: user.profilePicture,
       fullName: user.fullName,
       teamName: team.teamName,
-      teamSupervisor: team.supvervisedBy,
+      teamSupervisor: team.supervisedBy,
     });
 
     await newJoinRequest.save();
