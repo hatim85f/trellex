@@ -230,7 +230,10 @@ router.put("/approve-join", auth, async (req, res) => {
     console.error(error.message);
     return res
       .status(500)
-      .json({ message: "Something went wrong, please try again later." });
+      .json({
+        message:
+          error.message || "Something went wrong, please try again later.",
+      });
   }
 });
 
