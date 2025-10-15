@@ -250,7 +250,7 @@ router.put("/tokens", auth, async (req, res) => {
     return res.status(200).send({ message: "Push token updated" });
   } catch (error) {
     console.error(error.message);
-    return res.status(500).send({ message: "Server error" });
+    return res.status(500).send({ message: "" });
   }
 });
 
