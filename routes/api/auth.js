@@ -227,6 +227,33 @@ router.post(
   }
 );
 
+// router PUT api/auth/tokens
+// @desc   Update user push tokens
+// @access  Private
+router.put("/tokens", auth, async (req, res) => {
+  const { userId, pushToken } = req.body;
+  if (!userId || !pushToken) {
+    return res
+      .status(400)
+      .json({ message: "User ID and push token are required" });
+  }
+
+  try {
+    await User.updateOne(
+      {
+        _id: userId,
+      },
+      {
+        $addToSet: { pushTokens: pushToken }, // addToSet prevents duplicates
+      }
+    );
+    return res.status(200).send({ message: "Push token updated" });
+  } catch (error) {
+    console.error(error.message);
+    return res.status(500).send({ message: "Server error" });
+  }
+});
+
 // @route   PUT api/auth/profile
 // @desc    Update user profile
 // @access  Private
